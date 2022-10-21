@@ -33,10 +33,17 @@ class Stream extends UserMedia {
             const stream: MediaStream = await this.getPermission()
             this.listeners.onStreamStarted(stream)
         } catch (error) {
-            console.log(this)
 
             this.listeners.onError(error)
         }
+    }
+
+
+    finishStream() {
+        this.stop()
+        this.status = COMPLETED
+        this.listeners.onStreamCompleted()
+        //do stuff later
     }
 }
 

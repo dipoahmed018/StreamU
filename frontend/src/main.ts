@@ -9,8 +9,10 @@ const streamStarted = (stream: MediaStream) => {
 }
 
 const startStreamBtn = document.getElementById('start-stream')
+const finishStreamBtn = document.getElementById('finish-stream')
 const stream1 = new Stream({
   onStreamStarted: streamStarted
 });
 
 startStreamBtn?.addEventListener('click', () => stream1.startStreaming())
+finishStreamBtn?.addEventListener('click', () => stream1.finishStream())
