@@ -15,6 +15,8 @@ const COMPLETED = '4';
 
 
 class Stream extends UserMedia {
+
+    public serverEndPoint: String
     public status = INACTIVE
     public listeners: Listeners = {
         onStreamCompleted: () => { },
@@ -22,9 +24,11 @@ class Stream extends UserMedia {
         onStreamStarted: () => { },
         onError: () => { },
     }
+    private recorder: MediaRecorder | null = null;
 
-    constructor(providedListeners: Object = {}) {
+    constructor(serverEndPoint: String, providedListeners: Object = {}) {
         super()
+        this.serverEndPoint = serverEndPoint
         this.listeners = { ...this.listeners, ...providedListeners }
     }
 
@@ -32,6 +36,9 @@ class Stream extends UserMedia {
         try {
             const stream: MediaStream = await this.getPermission()
             this.listeners.onStreamStarted(stream)
+            this.startRecording(stream)
+
+            this.status = PLAYING;
         } catch (error) {
 
             this.listeners.onError(error)
@@ -40,10 +47,45 @@ class Stream extends UserMedia {
 
 
     finishStream() {
-        this.stop()
         this.status = COMPLETED
         this.listeners.onStreamCompleted()
-        //do stuff later
+        this.stop()
+        this.stopRecording()
+    }
+
+
+    /**
+     * Start Recording Stream
+     * 
+     */
+    private startRecording(stream: MediaStream): void {
+
+        this.recorder = new MediaRecorder(stream)
+        this.recorder.start(5000)
+        this.recorder.ondataavailable = this.uploadStreamToServer
+    }
+
+    /**
+     * Stop Recording Stream
+     * 
+     */
+
+    private stopRecording() {
+        this.recorder?.stop()
+    }
+
+    /**
+     * Upload Stream To Server
+     * 
+     */
+
+    async private uploadStreamToServer(event: MediaStream) {
+        try {
+            const res = await fetch(this.serverEndPoint)
+            
+        } catch (error) {
+            
+        }
     }
 }
 

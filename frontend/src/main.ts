@@ -10,7 +10,8 @@ const streamStarted = (stream: MediaStream) => {
 
 const startStreamBtn = document.getElementById('start-stream')
 const finishStreamBtn = document.getElementById('finish-stream')
-const stream1 = new Stream({
+
+const stream1 = new Stream('http://127.0.0.1:.3000/stream', {
   onStreamStarted: streamStarted
 });
 
