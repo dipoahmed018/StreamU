@@ -79,13 +79,8 @@ class Stream extends UserMedia {
      * 
      */
 
-    async private uploadStreamToServer(event: MediaStream) {
-        try {
-            const res = await fetch(this.serverEndPoint)
-            
-        } catch (error) {
-            
-        }
+    private async uploadStreamToServer(event: BlobEvent) {
+       
     }
 }
 
