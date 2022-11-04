@@ -1,6 +1,7 @@
 import express, { Express, Request, Response } from 'express';
 import {WebSocketServer} from 'ws'
 import dotenv from 'dotenv';
+import { startStream } from './app/controller/StreamController';
 dotenv.config();
 
 const port = process.env.PORT;
@@ -28,10 +29,13 @@ const server = app.listen(port, () => {
 
 server.on('upgrade', (request, socket, head) => {
     wsServer.handleUpgrade(request, socket, head, (ws) => {
+        console.log(request)
         wsServer.emit('connection', ws, request);
     });
 })
 
-wsServer.on('connection', () => {
-    console.log('Client Connected')
+wsServer.on('connection', (ws) => {
+    ws.on('message', (data: Blob, isBinary) => {
+        startStream(data)
+    })
 })
