@@ -1,36 +1,17 @@
 import { spawn } from "child_process"
+import StreamRepository, { StreamInformation } from "../models/Streams";
 
-export const startStream = (data: Blob) => {
-    // const { stdout, stdin, stderr } = spawn('ffmpeg', [
-    //     '-i', '-',
-    //     '-re',
-    //     '-fflags', '+igndts',
+export const startStream = (data: string, streamId: string): string => {
 
-    //     '-vcodec', 'copy',
-    //     '-acodec', 'copy',
+    const { FFmpegProcess: { stdin, stderr }, id }: StreamInformation = new StreamRepository().getOrCreateStream(streamId)
 
-    //     '-preset', 'slow',
-    //     '-crf', '22',
-    //     // You can also use QP value to adjust output stream quality, e.g.: 
-    //     // '-qp', '0',
-    //     // You can also specify output target bitrate directly, e.g.:
-    //     '-b:v', '1500K',
-    //     '-b:a', '128K', // Audio bitrate
+    const buffer = Buffer.from(data, 'base64')
+    stdin.write(buffer, (err) => {
+        console.log('error:', [err])
+    })
 
-    //     '-f', 'hls',
-    //     '-hls_time', '2',
-    //     '-hls_playlist_type', 'vod',
-    //     '-hls_flags', 'independent_segments',
-    //     '-hls_segment_type', 'mpegts',
-    //     '-hls_segment_filename', '/hode/dipo/Videos/stream%02d.ts', 'stream.m3u8',
-    // ]);
-
-    // stdout.on('data', (data) => {
-    //     // console.log(data)
-    // })
-
-    // stderr.on('data', data => {
-    //     console.log(data.toString())
-    // })
-    return false;
+    stderr.on('data', data => {
+        // console.log(data.toString())
+    })
+    return streamId;
 }

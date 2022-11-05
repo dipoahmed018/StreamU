@@ -1,5 +1,6 @@
 import UserMedia from "./UserMedia";
-
+import WS from './Websocket';
+import { v4 as uuid } from 'uuid'
 interface Listeners {
     onStreamStarted: Function,
     onStreamPaused: Function,
@@ -16,7 +17,7 @@ const COMPLETED = '4';
 
 class Stream extends UserMedia {
 
-    public serverEndPoint: String
+    private streamID: string;
     public status = INACTIVE
     public listeners: Listeners = {
         onStreamCompleted: () => { },
@@ -25,11 +26,13 @@ class Stream extends UserMedia {
         onError: () => { },
     }
     private recorder: MediaRecorder | null = null;
+    private WsServer: WS;
 
-    constructor(serverEndPoint: String, providedListeners: Object = {}) {
+    constructor(serverEndPoint: string, providedListeners: Object = {}) {
         super()
-        this.serverEndPoint = serverEndPoint
+        this.WsServer = new WS(serverEndPoint)
         this.listeners = { ...this.listeners, ...providedListeners }
+        this.streamID = uuid();
     }
 
     async startStreaming() {
@@ -61,8 +64,8 @@ class Stream extends UserMedia {
     private startRecording(stream: MediaStream): void {
 
         this.recorder = new MediaRecorder(stream)
-        this.recorder.start(5000)
-        this.recorder.ondataavailable = this.uploadStreamToServer
+        this.recorder.start(3000)
+        this.recorder.ondataavailable = (e: BlobEvent) => this.uploadStreamToServer(e)
     }
 
     /**
@@ -80,7 +83,13 @@ class Stream extends UserMedia {
      */
 
     private async uploadStreamToServer(event: BlobEvent) {
-       
+        //first convert the video blob to base64 string and then send it to server with the stream identifier included
+        const reader = new FileReader()
+        reader.readAsDataURL(event.data)
+        reader.onloadend = () => {
+            const streamInfo = { stream: reader.result, streamId: this.streamID }
+            this.WsServer.send(JSON.stringify(streamInfo))
+        }
     }
 }
 
