@@ -13,11 +13,10 @@ export interface StreamDataType {
 
 export default class StreamRepository {
     private data: Array<StreamInformation> = [];
+    private static insatance: StreamRepository | null = null;
 
     constructor(streams: Array<StreamInformation> = []) {
-        if (!this.data.length) {
-            this.data = streams
-        }
+        this.data = streams
     }
 
     public getStreamProcess(id: string): StreamInformation | undefined {
@@ -37,7 +36,6 @@ export default class StreamRepository {
         if (existingStream)
             return existingStream;
 
-        console.log('creating new ffmpeg process')
         const streamProcess = spawn('ffmpeg', [
             '-i', '-',
             '-re',
@@ -59,10 +57,18 @@ export default class StreamRepository {
             '-hls_playlist_type', 'vod',
             '-hls_flags', 'independent_segments',
             '-hls_segment_type', 'mpegts',
-            '-hls_segment_filename', `/hode/dipo/Videos/${id}/stream%02d.ts`, `${id}.m3u8`,
+            '-hls_segment_filename', `/home/dipo/Videos/${id}/stream%02d.ts`, `${id}.m3u8`,
         ]);
         const streamInfo: StreamInformation = { id, FFmpegProcess: streamProcess };
         this.data.push(streamInfo)
         return streamInfo;
+    }
+
+    public static getInstance() {
+        if (StreamRepository.insatance)
+            return StreamRepository.insatance
+
+        StreamRepository.insatance = new StreamRepository()
+        return StreamRepository.insatance
     }
 }
