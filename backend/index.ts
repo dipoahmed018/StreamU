@@ -3,18 +3,21 @@ import { WebSocketServer } from 'ws'
 import StreamRepository, { StreamDataType } from './app/models/Streams'
 import dotenv from 'dotenv';
 import { startStream } from './app/controller/StreamController';
+import { cors } from "./app/middleware/cors";
+
 dotenv.config();
 
 const port = process.env.PORT;
 const debug = require('debug')('StreamU')
 const app: Express = express();
+app.use(cors)
+const storage = app.use('/streams', express.static('storage/streams'))
 const ws = require('ws')
 
 app.use('/', (req: Request, res: Response) => {
     res.send('welcome to my little expriment')
 })
 
-app.use('/stream', require('./routes/Stream'));
 
 const wsServer: WebSocketServer = new ws.Server({ noServer: true });
 const streams = StreamRepository.getInstance()
@@ -34,9 +37,7 @@ server.on('upgrade', (request, socket, head) => {
 })
 
 wsServer.on('connection', (ws) => {
-    ws.on('message', (data) => {
-
-        const streamInfo: StreamDataType = JSON.parse(data.toString())
-        startStream(streamInfo.stream, streamInfo.streamId)
+    ws.on('message', (data: string) => {
+        ws.send(startStream(JSON.parse(data)))
     })
 })

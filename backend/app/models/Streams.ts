@@ -1,8 +1,10 @@
 import { ChildProcessWithoutNullStreams, spawn } from 'child_process'
 import { randomUUID } from 'crypto';
+import { appendFile, existsSync, mkdirSync } from 'node:fs';
 
 export interface StreamInformation {
     id: string,
+    url: string,
     FFmpegProcess: ChildProcessWithoutNullStreams;
 }
 
@@ -36,13 +38,20 @@ export default class StreamRepository {
         if (existingStream)
             return existingStream;
 
+        const url = `${process.env.APP_URL}:${process.env.PORT}/streams/${id}/stream.m3u8`
+        const path = process.env.ROOT_DIR + `/storage/streams/${id}`
+
+        if (!existsSync(path)) {
+            mkdirSync(path, { recursive: true })
+        }
+
         const streamProcess = spawn('ffmpeg', [
             '-i', '-',
-            '-re',
+            // '-re',
             '-fflags', '+igndts',
 
-            '-vcodec', 'copy',
-            '-acodec', 'copy',
+            '-vcodec', 'h264',
+            '-acodec', 'aac',
 
             '-preset', 'slow',
             '-crf', '22',
@@ -54,12 +63,20 @@ export default class StreamRepository {
 
             '-f', 'hls',
             '-hls_time', '2',
-            '-hls_playlist_type', 'vod',
+            // '-hls_playlist_type', 'vod',
+            '-hls_list_size', '2',
             '-hls_flags', 'independent_segments',
             '-hls_segment_type', 'mpegts',
-            '-hls_segment_filename', `/home/dipo/Videos/${id}/stream%02d.ts`, `${id}.m3u8`,
+            '-hls_segment_filename', `${path}/stream%02d.ts`, `${path}/stream.m3u8`,
         ]);
-        const streamInfo: StreamInformation = { id, FFmpegProcess: streamProcess };
+
+        streamProcess.stderr.on('data', (data) => {
+            appendFile(`${process.env.ROOT_DIR}/storage/logs/node.log`, data, (done) => {
+                console.log(done)
+            })
+        })
+
+        const streamInfo: StreamInformation = { id, url, FFmpegProcess: streamProcess };
         this.data.push(streamInfo)
         return streamInfo;
     }
@@ -72,3 +89,4 @@ export default class StreamRepository {
         return StreamRepository.insatance
     }
 }
+

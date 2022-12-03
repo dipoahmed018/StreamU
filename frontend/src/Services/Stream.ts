@@ -30,7 +30,7 @@ class Stream extends UserMedia {
 
     constructor(serverEndPoint: string, providedListeners: Object = {}) {
         super()
-        this.WsServer = new WS(serverEndPoint)
+        this.WsServer = WS.getOrCreateConnection(serverEndPoint)
         this.listeners = { ...this.listeners, ...providedListeners }
         this.streamID = uuid();
     }
@@ -40,7 +40,6 @@ class Stream extends UserMedia {
             const stream: MediaStream = await this.getPermission()
             this.listeners.onStreamStarted(stream)
             this.startRecording(stream)
-
             this.status = PLAYING;
         } catch (error) {
 
@@ -83,12 +82,14 @@ class Stream extends UserMedia {
      */
 
     private async uploadStreamToServer(event: BlobEvent) {
-        //first convert the video blob to base64 string and then send it to server with the stream identifier included
         const reader = new FileReader()
         reader.readAsDataURL(event.data)
-        reader.onloadend = () => {
-            const streamInfo = { stream: reader.result, streamId: this.streamID }
-            this.WsServer.send(JSON.stringify(streamInfo))
+        reader.onload = () => {
+            const data = {
+                streamID: this.streamID,
+                data: reader.result
+            }
+            this.WsServer.send(JSON.stringify(data))
         }
     }
 }
